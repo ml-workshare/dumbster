@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import com.workshare.dumbster.Constants;
+import com.workshare.dumbster.MailData;
+import com.workshare.dumbster.MailSocket;
+
 public class ClientSession implements Runnable {
 
     private IOSource socket;
@@ -16,13 +20,13 @@ public class ClientSession implements Runnable {
     private String line;
     private String lastHeaderName = null;
 
-
     public ClientSession(IOSource socket, MailStore mailStore) {
-        this.socket = socket;
-        this.mailStore = mailStore;
-        this.msg = new MailMessageImpl();
-        Request request = Request.initialRequest();
-        smtpResponse = request.execute(this.mailStore, msg);
+
+    	 this.socket = socket;
+         this.mailStore = mailStore;
+         this.msg = new MailMessageImpl();
+         Request request = Request.initialRequest();
+         smtpResponse = request.execute(this.mailStore, msg);
     }
 
     public void run() {
@@ -97,7 +101,21 @@ public class ClientSession implements Runnable {
     
     private void signalMessageReceivedIfComplete() {
     	if (smtpState == SmtpState.QUIT) {
+    		MailData data = new MailData(msg);
+    		String hostname = data.getHeader(Constants.CallbackHeader);
+    		String portvalue = data.getHeader(Constants.CallbackPortHeader);
     		
+    		if( hostname != null && portvalue != null ) {
+    			
+    		}
+    			int port = Integer.parseInt(portvalue);
+        		try {
+        			
+    				MailSocket.openSocketAndWrite(hostname, port, data);
+    				
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    		}
     	}
     }
 

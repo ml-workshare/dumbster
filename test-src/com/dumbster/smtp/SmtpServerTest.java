@@ -19,6 +19,8 @@ package com.dumbster.smtp;
 import org.junit.*;
 
 import com.dumbster.smtp.SmtpServer;
+import com.workshare.dumbster.Constants;
+import com.workshare.dumbster.ServerThread;
 
 import static org.junit.Assert.*;
 
@@ -26,6 +28,7 @@ import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.mail.*;
 import javax.mail.internet.*;
+
 import java.util.Properties;
 import java.util.Date;
 
@@ -242,6 +245,31 @@ public class SmtpServerTest {
         assertEquals("Test", email.getFirstHeaderValue("Subject"));
         assertEquals("Test Body", email.getBody());
     }
+    
+    @Test
+    public void testSendWithCallback() {
+
+        try {
+            Properties mailProps = getMailProperties(SMTP_PORT);
+            Session session = Session.getInstance(mailProps, null);
+
+            int replyPort = 1234;
+            
+            MimeMessage msg = createCallbackMessage(session, FROM, TO, SUBJECT, BODY, replyPort);
+            ServerThread serverThread = new ServerThread(replyPort);
+            serverThread.start();
+            Transport.send(msg);
+            serverThread.join(5000);
+            
+            assertNotNull(serverThread.mailData);
+            
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Unexpected exception: " + e);
+        }
+    
+    }
 
     private Properties getMailProperties(int port) {
         Properties mailProps = new Properties();
@@ -266,6 +294,18 @@ public class SmtpServerTest {
 
     private MimeMessage createMessage(Session session, String from, String to, String subject, String body) throws MessagingException {
         MimeMessage msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress(from));
+        msg.setSubject(subject);
+        msg.setSentDate(new Date());
+        msg.setText(body);
+        msg.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
+        return msg;
+    }
+    
+    private MimeMessage createCallbackMessage(Session session, String from, String to, String subject, String body, int replyPort) throws MessagingException {
+        MimeMessage msg = new MimeMessage(session);
+        msg.addHeader(Constants.CallbackHeader, "localhost");
+        msg.addHeader(Constants.CallbackPortHeader, Integer.toString(replyPort));
         msg.setFrom(new InternetAddress(from));
         msg.setSubject(subject);
         msg.setSentDate(new Date());
