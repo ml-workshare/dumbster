@@ -74,6 +74,7 @@ public class ClientSession implements Runnable {
             storeInputInMessage(request);
             sendResponse();
             updateSmtpState();
+            signalMessageReceivedIfComplete();
             saveAndRefreshMessageIfComplete();
         }
     }
@@ -92,6 +93,12 @@ public class ClientSession implements Runnable {
             mailStore.addMessage(msg);
             msg = new MailMessageImpl();
         }
+    }
+    
+    private void signalMessageReceivedIfComplete() {
+    	if (smtpState == SmtpState.QUIT) {
+    		
+    	}
     }
 
     private void storeInputInMessage(Request request) {
